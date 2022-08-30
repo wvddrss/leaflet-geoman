@@ -377,7 +377,22 @@ const Toolbar = L.Class.extend({
       disableOtherButtons: true,
       position: this.options.position,
       tool: 'edit',
-      actions: ['finishMode'],
+      actions: ['finishMode', 'cancel'],
+    };
+
+    const scaleButton = {
+      title: getTranslation('buttonTitles.scaleButton'),
+      className: 'control-icon leaflet-pm-icon-scale',
+      onClick: () => {},
+      afterClick: () => {
+        this.map.pm.toggleGlobalScaleMode();
+      },
+      doToggle: true,
+      toggleStatus: false,
+      disableOtherButtons: true,
+      position: this.options.position,
+      tool: 'edit',
+      actions: ['finishMode', 'cancel'],
     };
 
     const drawTextButton = {
@@ -411,6 +426,7 @@ const Toolbar = L.Class.extend({
     this._addButton('cutPolygon', new L.Control.PMButton(cutButton));
     this._addButton('removalMode', new L.Control.PMButton(deleteButton));
     this._addButton('rotateMode', new L.Control.PMButton(rotateButton));
+    this._addButton('scaleMode', new L.Control.PMButton(scaleButton))
   },
 
   _showHideButtons() {
@@ -486,7 +502,9 @@ const Toolbar = L.Class.extend({
       throw new TypeError('Button has no name');
     } else if (typeof options !== 'object') {
       // if only the name is passed and no options object
-      options = { name: options };
+      options = { 
+        name: options
+      };
     }
 
     const instance = this._btnNameMapping(copyInstance);
@@ -496,7 +514,7 @@ const Toolbar = L.Class.extend({
     }
 
     if (this.buttons[options.name]) {
-      throw new TypeError('Button with this name already exists');
+      // throw new TypeError('Button with this name already exists');
     }
     const drawInstance = this.map.pm.Draw.createNewDrawInstance(
       options.name,
@@ -677,6 +695,7 @@ const Toolbar = L.Class.extend({
       Cut: 'cutPolygon',
       Removal: 'removalMode',
       Rotate: 'rotateMode',
+      Scale: 'scaleMode',
       Text: 'drawText',
     };
   },

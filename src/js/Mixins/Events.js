@@ -488,7 +488,105 @@ const EventMixin = {
       customPayload
     );
   },
-
+  // Rotation Events
+  // Fired when scale is enabled
+  _fireScaleEnable(
+    fireLayer,
+    helpLayer,
+    source = 'Scale',
+    customPayload = {}
+  ) {
+    this.__fire(
+      fireLayer,
+      'pm:scaleenable',
+      {
+        layer: this._layer,
+        helpLayer: this._rotatePoly,
+        shape: this.getShape(),
+      },
+      source,
+      customPayload
+    );
+  },
+  // Fired when scale is disabled
+  _fireScaleDisable(fireLayer, source = 'Scale', customPayload = {}) {
+    this.__fire(
+      fireLayer,
+      'pm:scaledisable',
+      {
+        layer: this._layer,
+        shape: this.getShape(),
+      },
+      source,
+      customPayload
+    );
+  },
+  // Fired when scale starts
+  _fireScaleStart(
+    fireLayer,
+    originLatLngs,
+    source = 'Scale',
+    customPayload = {}
+  ) {
+    this.__fire(
+      fireLayer,
+      'pm:scalestart',
+      {
+        layer: this._scaledLayer,
+        helpLayer: this._layer,
+        ratio: 0,
+        originLatLngs,
+      },
+      source,
+      customPayload
+    );
+  },
+  // Fired while rotation
+  _fireScale(
+    fireLayer,
+    ratio,
+    oldLatLngs,
+    rotationLayer = this._scaledLayer,
+    source = 'Scale',
+    customPayload = {}
+  ) {
+    this.__fire(
+      fireLayer,
+      'pm:scale',
+      {
+        layer: rotationLayer,
+        helpLayer: this._layer,
+        ratio,
+        oldLatLngs,
+        newLatLngs: rotationLayer.getLatLngs(),
+      },
+      source,
+      customPayload
+    );
+  },
+  // Fired when scale ends
+  _fireScaleEnd(
+    fireLayer,
+    ratio,
+    originLatLngs,
+    source = 'Scale',
+    customPayload = {}
+  ) {
+    this.__fire(
+      fireLayer,
+      'pm:scaleend',
+      {
+        layer: this._scaledLayer,
+        helpLayer: this._layer,
+        ratio,
+        angle: this._scaledLayer.pm.getAngle(),
+        originLatLngs,
+        newLatLngs: this._scaledLayer.getLatLngs(),
+      },
+      source,
+      customPayload
+    );
+  },
   // Global Events
   // Fired when a Toolbar action is clicked
   _fireActionClick(
@@ -626,6 +724,18 @@ const EventMixin = {
       },
       source,
       customPayload
+    );
+  },
+  _fireGlobalScaleModeToggled(source = 'Global', customPayLoad = {}) {
+    this.__fire(
+      this.map,
+      'pm:globalscalemodetoggled',
+      {
+        enabled: this.globalScaleModeEnabled(),
+        map: this.map,
+      },
+      source,
+      customPayLoad
     );
   },
   // Fired when LayerGroup is removed

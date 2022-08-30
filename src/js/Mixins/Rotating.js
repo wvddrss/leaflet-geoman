@@ -19,6 +19,7 @@ const RotateMixin = {
     // we need to store the initial latlngs so we can always re-calc from the origin latlngs
     this._initialRotateLatLng = copyLatLngs(this._layer);
     this._startAngle = this.getAngle();
+    this._radiant = 0
 
     const originLatLngs = copyLatLngs(
       this._rotationLayer,
@@ -37,7 +38,6 @@ const RotateMixin = {
     const angleDiffRadiant =
       Math.atan2(position.y - origin.y, position.x - origin.x) -
       Math.atan2(previous.y - origin.y, previous.x - origin.x);
-
     // rotate the temp polygon
     this._layer.setLatLngs(
       this._rotateLayer(
@@ -78,6 +78,7 @@ const RotateMixin = {
       )
     );
 
+    this._radiant = angleDiffRadiant
     // convert the difference radiant to degrees and add it to the angle before rotation starts
     let angleDiff = (angleDiffRadiant * 180) / Math.PI;
     angleDiff = angleDiff < 0 ? angleDiff + 360 : angleDiff;
@@ -94,6 +95,8 @@ const RotateMixin = {
   },
   _onRotateEnd() {
     const startAngle = this._startAngle;
+    const radiant = this._radiant
+    const origin = this._rotationOriginLatLng
     delete this._rotationOriginLatLng;
     delete this._rotationOriginPoint;
     delete this._rotationStartPoint;
@@ -108,10 +111,16 @@ const RotateMixin = {
     this._rotationLayer.pm._rotateOrgLatLng = copyLatLngs(this._rotationLayer);
 
     this._fireRotationEnd(this._rotationLayer, startAngle, originLatLngs, undefined, {
-      matrix: this._matrix
+      transformation: {
+        "rotation": radiant,
+        "origin": [origin.lng, origin.lat],
+      }
     });
     this._fireRotationEnd(this._map, startAngle, originLatLngs, undefined, {
-      matrix: this._matrix
+      transformation: {
+        "rotation": radiant,
+        "origin": [origin.lng, origin.lat],
+      }
     });
     this._rotationLayer.pm._fireEdit(this._rotationLayer, 'Rotation');
 

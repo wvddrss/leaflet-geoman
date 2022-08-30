@@ -431,6 +431,26 @@ declare module 'leaflet' {
 
     /******************************************
      *
+     * TODO: SCALE MODE EVENTS ON MAP ONLY
+     *
+     ********************************************/
+
+    /** Fired when Scale Mode is toggled. */
+    on(
+      type: 'pm:globalscalemodetoggled',
+      fn: PM.GlobalScaleModeToggledEventHandler
+    ): this;
+    once(
+      type: 'pm:globalscalemodetoggled',
+      fn: PM.GlobalScaleModeToggledEventHandler
+    ): this;
+    off(
+      type: 'pm:globalscalemodetoggled',
+      fn?: PM.GlobalScaleModeToggledEventHandler
+    ): this;
+
+    /******************************************
+     *
      * TODO: TRANSLATION EVENTS ON MAP ONLY
      *
      ********************************************/
@@ -1530,6 +1550,14 @@ declare module 'leaflet' {
      * ROTATE MODE MAP EVENT HANDLERS
      */
     export type GlobalRotateModeToggledEventHandler = (e: {
+      enabled: boolean;
+      map: L.Map;
+    }) => void;
+
+    /**
+     * SCALE MODE MAP EVENT HANDLERS
+     */
+    export type GlobalScaleModeToggledEventHandler = (e: {
       enabled: boolean;
       map: L.Map;
     }) => void;

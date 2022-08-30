@@ -1,3 +1,4 @@
+import { _toPoint } from '../helpers/ModeHelper';
 import { getRenderer } from '../helpers';
 
 const DragMixin = {
@@ -9,6 +10,7 @@ const DragMixin = {
 
     // before enabling layer drag, disable layer editing
     this.disable();
+    this._translationPoint = [0, 0]
 
     this._layerDragEnabled = true;
 
@@ -318,13 +320,27 @@ const DragMixin = {
     window.setTimeout(() => {
       // set state
       this._dragging = false;
+      const translation = this._translationPoint
+      delete this._translationPoint
       // if the layer is not on the map, we have no DOM element
       if (el) {
         L.DomUtil.removeClass(el, 'leaflet-pm-dragging');
       }
 
+      const polygon = L.polygon(this._layer.getLatLngs(), {
+        stroke: false,
+        fill: false,
+        pmIgnore: true,
+      }).addTo(this._layer._map);
+      const center = polygon.getCenter();
+
       // fire pm:dragend event
-      this._fireDragEnd();
+      this._fireDragEnd('Edit', {
+        transformation: {
+          translation,
+          origin: [center.lng, center.lat]
+        }
+      });
 
       // fire edit
       this._fireEdit();
@@ -341,6 +357,11 @@ const DragMixin = {
       lat: latlng.lat - this._tempDragCoord.lat,
       lng: latlng.lng - this._tempDragCoord.lng,
     };
+
+    this._translationPoint = [this._translationPoint[0] + deltaLatLng.lng, this._translationPoint[1] + deltaLatLng.lat]
+    console.log(this._translationPoint)
+
+    const point = _toPoint(this._map, deltaLatLng)
 
     // move the coordinates by the delta
     const moveCoords = (coords) =>

@@ -158,7 +158,7 @@ Matrix.prototype = {
    */
   flip() {
     this._matrix[1] *= -1;
-    this._matrix[2] *= -1;
+    this._matrix[2] *= -1; 
     return this;
   },
 

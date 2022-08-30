@@ -141,6 +141,7 @@ Edit.Line = Edit.extend({
 
     // cleanup old ones first
     if (this._markerGroup) {
+      console.log('clean up old markers')
       this._markerGroup.clearLayers();
     }
 
@@ -197,6 +198,10 @@ Edit.Line = Edit.extend({
       marker.on('dragstart', this._onRotateStart, this);
       marker.on('drag', this._onRotate, this);
       marker.on('dragend', this._onRotateEnd, this);
+    } else if (this.options.scale) {
+      marker.on('dragstart', this._onScaleStart, this);
+      marker.on('drag', this._onScale, this);
+      marker.on('dragend', this._onScaleEnd, this);
     } else {
       marker.on('click', this._onVertexClick, this);
       marker.on('dragstart', this._onMarkerDragStart, this);
