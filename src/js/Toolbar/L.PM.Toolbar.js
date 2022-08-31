@@ -426,7 +426,7 @@ const Toolbar = L.Class.extend({
     this._addButton('cutPolygon', new L.Control.PMButton(cutButton));
     this._addButton('removalMode', new L.Control.PMButton(deleteButton));
     this._addButton('rotateMode', new L.Control.PMButton(rotateButton));
-    this._addButton('scaleMode', new L.Control.PMButton(scaleButton))
+    this._addButton('scaleMode', new L.Control.PMButton(scaleButton));
   },
 
   _showHideButtons() {

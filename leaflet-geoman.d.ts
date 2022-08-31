@@ -525,6 +525,7 @@ declare module 'leaflet' {
         PMDragMap,
         PMRemoveMap,
         PMCutMap,
+        PMScaleMap,
         PMRotateMap {
       Toolbar: PMMapToolbar;
 
