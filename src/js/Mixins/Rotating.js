@@ -18,6 +18,7 @@ const RotateMixin = {
     this._rotationStartPoint = _toPoint(this._map, e.target.getLatLng());
     // we need to store the initial latlngs so we can always re-calc from the origin latlngs
     this._initialRotateLatLng = copyLatLngs(this._layer);
+    this._initialScaleBoundingBoxLatLng = copyLatLngs(this._rect);
     this._startAngle = this.getAngle();
     this._radiant = 0
 
@@ -48,6 +49,15 @@ const RotateMixin = {
         this._map
       )
     );
+    this._rect.setLatLngs(
+      this._rotateLayer(
+        angleDiffRadiant,
+        this._initialScaleBoundingBoxLatLng,
+        this._rotationOriginLatLng,
+        L.PM.Matrix.init(),
+        this._map
+      )
+    )
     // move the helper markers
     const that = this;
     function forEachLatLng(latlng, path = [], _i = -1) {
@@ -57,14 +67,13 @@ const RotateMixin = {
       if (L.Util.isArray(latlng[0])) {
         latlng.forEach((x, i) => forEachLatLng(x, path.slice(), i));
       } else {
-        const markers = get(that._markers, path);
         latlng.forEach((_latlng, j) => {
-          const marker = markers[j];
+          const marker = that._markers[j];
           marker.setLatLng(_latlng);
         });
       }
     }
-    forEachLatLng(this._layer.getLatLngs());
+    forEachLatLng(this._rect.getLatLngs());
 
     const oldLatLngs = copyLatLngs(this._rotationLayer);
     // rotate the origin layer
@@ -180,7 +189,10 @@ const RotateMixin = {
     });
     // we connect the temp polygon (that will be enabled for rotation) with the current layer, so that we can rotate the current layer too
     this._rotatePoly.pm._rotationLayer = this._layer;
-    this._rotatePoly.pm.enable();
+    this._rotatePoly.pm.enable({
+      boundingBox: true,
+      rotation: true
+    });
 
     // store the original latlngs
     this._rotateOrgLatLng = copyLatLngs(this._layer);

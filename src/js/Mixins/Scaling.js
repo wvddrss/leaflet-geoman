@@ -13,13 +13,13 @@ const ScaleMixin = {
   _onScaleStart(e) {
     this._preventRenderingMarkers(true)
     this._scaleOriginLatLng = this._getScaleCenter().clone()
-    console.log(this._scaleOriginLatLng)
     this._ratio = 1
     this._scaleOriginPoint = _toPoint(this._map, this._scaleOriginLatLng)
     this._scaleStartPoint = _toPoint(this._map, e.target.getLatLng())
     this._initialDistance = this._scaleOriginPoint.distanceTo(this._scaleStartPoint)
     // we need to store the initial latlngs so we can always re-calc from the origin latlngs
     this._initialScaleLatLng = copyLatLngs(this._layer);
+    this._initialScaleBoundingBoxLatLng = copyLatLngs(this._rect);
 
     const originLatLngs = copyLatLngs(
       this._scaledLayer,
@@ -46,6 +46,15 @@ const ScaleMixin = {
         this._map
       )
     );
+    this._rect.setLatLngs(
+      this._scaleLayer(
+        this._ratio,
+        this._initialScaleBoundingBoxLatLng,
+        this._scaleOriginLatLng,
+        L.PM.Matrix.init(),
+        this._map
+      )
+    )
     // move the helper markers
     const that = this;
     function forEachLatLng(latlng, path = [], _i = -1) {
@@ -55,14 +64,13 @@ const ScaleMixin = {
       if (L.Util.isArray(latlng[0])) {
         latlng.forEach((x, i) => forEachLatLng(x, path.slice(), i));
       } else {
-        const markers = get(that._markers, path);
         latlng.forEach((_latlng, j) => {
-          const marker = markers[j];
+          const marker = that._markers[j];
           marker.setLatLng(_latlng);
         });
       }
     }
-    forEachLatLng(this._layer.getLatLngs());
+    forEachLatLng(this._rect.getLatLngs());
 
     const oldLatLngs = copyLatLngs(this._scaledLayer);
     // scale the origin layer
@@ -165,7 +173,9 @@ const ScaleMixin = {
     });
     // we connect the temp polygon (that will be enabled for scaling) with the current layer, so that we can scale the current layer too
     this._scaledPoly.pm._scaledLayer = this._layer;
-    this._scaledPoly.pm.enable();
+    this._scaledPoly.pm.enable({
+      boundingBox: true
+    });
 
     // store the original latlngs
     this._scaleOrgLatLng = copyLatLngs(this._layer);

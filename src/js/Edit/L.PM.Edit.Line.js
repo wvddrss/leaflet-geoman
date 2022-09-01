@@ -15,6 +15,16 @@ import MarkerLimits from '../Mixins/MarkerLimits';
 // Got it? Now you know what is meant when you read "indexPath" around here. Have fun 👍
 
 Edit.Line = Edit.extend({
+  options: {
+    // rectangle
+    boundsOptions: {
+      weight: 1,
+      opacity: 1,
+      dashArray: [3, 3],
+      fill: false,
+      noClip: true,
+    },
+  },
   includes: [MarkerLimits],
   _shape: 'Line',
   initialize(layer) {
@@ -43,11 +53,23 @@ Edit.Line = Edit.extend({
       this.disable();
     }
 
+    let boundingBox = false
+
+    if (options && typeof options.boundingBox === 'boolean') {
+      boundingBox = true
+    }
+
+    if (options && typeof options.rotation === 'boolean') {
+      this.options.rotation = typeof options.rotation
+    }
+
     // change state
     this._enabled = true;
 
     // init markers
-    this._initMarkers();
+    this._initMarkers({
+      boundingBox,
+    });
 
     this.applyOptions();
 
@@ -135,7 +157,26 @@ Edit.Line = Edit.extend({
       this._disableSnapping();
     }
   },
-  _initMarkers() {
+
+  /**
+   * Bounding polygon
+   * @return {L.Polygon}
+   */
+  _getBoundingPolygon () {
+    if (this._rectShape) {
+      return L.GeoJSON.geometryToLayer(
+        this._rectShape,
+        this.options.boundsOptions
+      );
+    } 
+    return new L.Rectangle(
+      this._layer.getBounds(),
+      this.options.boundsOptions
+    );
+  },
+  _initMarkers({
+    boundingBox,
+  }) {
     const map = this._map;
     const coords = this._layer.getLatLngs();
 
@@ -174,21 +215,48 @@ Edit.Line = Edit.extend({
       return ringArr;
     };
 
-    // create markers
-    this._markers = handleRing(coords);
+    const handleBoundingBox = () => {
+      this._rect =
+        this._rect || this._getBoundingPolygon().addTo(this._markerGroup);
 
-    // handle possible limitation: maximum number of markers
-    this.filterMarkerGroup();
+      this._handlers = [];
+      // eslint-disable-next-line no-plusplus
+      for (let i = 0; i < 4; i++) {
+        // TODO: add stretching
+        this._handlers.push(
+          this._createMarker(this._rect._latlngs[0][i])
+        );
+      }
+
+      // add bounds
+      if (this.options.rotation) {
+        // add rotation handler
+        // todo
+        // this._createRotationHandlers();
+      }
+
+      return this._handlers
+    }
+
+    // create markers
+    if (boundingBox) {
+      this._markers = handleBoundingBox(coords);
+    } else {
+      this._markers = handleRing(coords)
+      // handle possible limitation: maximum number of markers
+      this.filterMarkerGroup();
+    }
+
 
     // add markerGroup to map
     map.addLayer(this._markerGroup);
   },
 
   // creates initial markers for coordinates
-  _createMarker(latlng) {
+  _createMarker(latlng, extraClass) {
     const marker = new L.Marker(latlng, {
       draggable: true,
-      icon: L.divIcon({ className: 'marker-icon' }),
+      icon: L.divIcon({ className: ['marker-icon', extraClass].join('') }),
     });
     this._setPane(marker, 'vertexPane');
 
