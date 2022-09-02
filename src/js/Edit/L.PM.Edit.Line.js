@@ -21,7 +21,6 @@ Edit.Line = Edit.extend({
       weight: 1,
       opacity: 1,
       dashArray: [3, 3],
-      fill: false,
       noClip: true,
     },
   },
@@ -166,12 +165,18 @@ Edit.Line = Edit.extend({
     if (this._rectShape) {
       return L.GeoJSON.geometryToLayer(
         this._rectShape,
-        this.options.boundsOptions
+        {
+          ...this.options.boundsOptions,
+          draggable: true
+        }
       );
     } 
     return new L.Rectangle(
       this._layer.getBounds(),
-      this.options.boundsOptions
+      {
+        ...this.options.boundsOptions,
+        draggable: true
+      }
     );
   },
   _initMarkers({

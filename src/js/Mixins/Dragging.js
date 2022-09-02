@@ -1,4 +1,3 @@
-import { _toPoint } from '../helpers/ModeHelper';
 import { getRenderer } from '../helpers';
 
 const DragMixin = {
@@ -26,6 +25,33 @@ const DragMixin = {
       // prevents dragging the DOM image instead of the marker
       L.DomEvent.on(this._getDOMElem(), 'dragstart', this._stopDOMImageDrag);
     }
+
+    if(this._layer.feature &&
+      this._layer.feature.geometry &&
+      this._layer.feature.geometry.type &&
+      this._layer.feature.geometry.type === 'LineString') {
+        // we create a bounding box.
+        this._boundingBoxHelperLayer = new L.LayerGroup()
+        this._rect = this._rect || this._getBoundingPolygon()
+        this._rect.pm._isBoundingBox = true
+        this._rect.addTo(this._boundingBoxHelperLayer);
+        this._map.addLayer(this._boundingBoxHelperLayer);
+        this._rect.pm.enableLayerDrag()
+        const that = this
+        this._rect.pm.addTranslateBoundingBoxListener((deltaLatLng) => {
+          const newCords = that._moveCoords(that._layer._latlngs, deltaLatLng)
+          that._layer.setLatLngs(newCords);
+        })
+        this._rect.pm.addOnDragEndBoundingBoxListener((translation, center) => {
+          that._fireDragEnd('Edit', {
+            transformation: {
+              translation,
+              origin: [center.lng, center.lat]
+            }
+          });
+        })
+        this._rect.bringToFront()
+      }
 
     // Disable Leaflet Dragging of Markers
     if (this._layer.dragging) {
@@ -75,8 +101,20 @@ const DragMixin = {
 
     this._fireDragEnable();
   },
+  addTranslateBoundingBoxListener(fn) {
+    this._translateBoundingBoxListener = fn
+  },
+  addOnDragEndBoundingBoxListener(fn) {
+    this._onDragEndBoundingBoxListener = fn
+  },
   disableLayerDrag() {
     this._layerDragEnabled = false;
+    delete this._translationPoint
+    if (this._rect) {
+      this._boundingBoxHelperLayer.clearLayers()
+      this._boundingBoxHelperLayer = undefined
+      this._rect = undefined
+    }
 
     // remove CSS class
     if (getRenderer(this._layer) instanceof L.Canvas) {
@@ -134,13 +172,19 @@ const DragMixin = {
   layerDragEnabled() {
     return !!this._layerDragEnabled;
   },
+  _getTarget() {
+    if (this._rect) {
+      return this._rect
+    }
+    return this._layer
+  },
   // We need to simulate a mousedown event on the layer object. We can't just use layer.on('mousedown') because on touch devices the event is not fired if user presses on the layer and then drag it.
   // With checking on touchstart and mousedown on the DOM element we can listen on the needed events
   _simulateMouseDownEvent(e) {
     const first = e.touches ? e.touches[0] : e;
     const evt = {
       originalEvent: first,
-      target: this._layer,
+      target: this._getTarget(),
     };
     // we expect in the function to get the clicked latlng / point
     evt.containerPoint = this._map.mouseEventToContainerPoint(first);
@@ -153,7 +197,7 @@ const DragMixin = {
     const first = e.touches ? e.touches[0] : e;
     const evt = {
       originalEvent: first,
-      target: this._layer,
+      target: this._getTarget(),
     };
     // we expect in the function to get the clicked latlng / point
     evt.containerPoint = this._map.mouseEventToContainerPoint(first);
@@ -165,7 +209,7 @@ const DragMixin = {
   _simulateMouseUpEvent(e) {
     const evt = {
       originalEvent: e,
-      target: this._layer,
+      target: this._getTarget(),
     };
     if (e.type.indexOf('touch') === -1) {
       // we expect in the function to get the clicked latlng / point
@@ -321,7 +365,6 @@ const DragMixin = {
       // set state
       this._dragging = false;
       const translation = this._translationPoint
-      delete this._translationPoint
       // if the layer is not on the map, we have no DOM element
       if (el) {
         L.DomUtil.removeClass(el, 'leaflet-pm-dragging');
@@ -333,6 +376,10 @@ const DragMixin = {
         pmIgnore: true,
       }).addTo(this._layer._map);
       const center = polygon.getCenter();
+
+      if (this._onDragEndBoundingBoxListener) {
+        this._onDragEndBoundingBoxListener(translation, center)
+      }
 
       // fire pm:dragend event
       this._fireDragEnd('Edit', {
@@ -348,6 +395,27 @@ const DragMixin = {
 
     return true;
   },
+  _moveCoords(coords, deltaLatLng) {
+    // alter the coordinates
+    const copyCoords = [...coords]
+    return copyCoords.map((currentLatLng) => {
+      if (Array.isArray(currentLatLng)) {
+        // do this recursively as coords might be nested
+        return this._moveCoords(currentLatLng, deltaLatLng);
+      }
+
+      // move the coord and return it
+      const newLatlng = {
+        lat: currentLatLng.lat + deltaLatLng.lat,
+        lng: currentLatLng.lng + deltaLatLng.lng,
+      };
+
+      if (currentLatLng.alt || currentLatLng.alt === 0) {
+        newLatlng.alt = currentLatLng.alt;
+      }
+      return newLatlng;
+    });
+  },
   _onLayerDrag(e) {
     // latLng of mouse event
     const { latlng } = e;
@@ -359,37 +427,13 @@ const DragMixin = {
     };
 
     this._translationPoint = [this._translationPoint[0] + deltaLatLng.lng, this._translationPoint[1] + deltaLatLng.lat]
-    console.log(this._translationPoint)
-
-    const point = _toPoint(this._map, deltaLatLng)
-
-    // move the coordinates by the delta
-    const moveCoords = (coords) =>
-      // alter the coordinates
-      coords.map((currentLatLng) => {
-        if (Array.isArray(currentLatLng)) {
-          // do this recursively as coords might be nested
-          return moveCoords(currentLatLng);
-        }
-
-        // move the coord and return it
-        const newLatlng = {
-          lat: currentLatLng.lat + deltaLatLng.lat,
-          lng: currentLatLng.lng + deltaLatLng.lng,
-        };
-
-        if (currentLatLng.alt || currentLatLng.alt === 0) {
-          newLatlng.alt = currentLatLng.alt;
-        }
-        return newLatlng;
-      });
 
     if (
       this._layer instanceof L.Circle ||
       (this._layer instanceof L.CircleMarker && this._layer.options.editable)
     ) {
       // create the new coordinates array
-      const newCoords = moveCoords([this._layer.getLatLng()]);
+      const newCoords = this._moveCoords([this._layer.getLatLng()], deltaLatLng);
       // set new coordinates and redraw
       this._layer.setLatLng(newCoords[0]);
       this._fireChange(this._layer.getLatLng(), 'Edit');
@@ -403,13 +447,13 @@ const DragMixin = {
         coordsRefernce = this._layer._orgLatLng;
       }
       // create the new coordinates array
-      const newCoords = moveCoords([coordsRefernce]);
+      const newCoords = this._moveCoords([coordsRefernce], deltaLatLng);
       // set new coordinates and redraw
       this._layer.setLatLng(newCoords[0]);
       this._fireChange(this._layer.getLatLng(), 'Edit');
     } else if (this._layer instanceof L.ImageOverlay) {
       // create the new coordinates array
-      const newCoords = moveCoords([
+      const newCoords = this._moveCoords([
         this._layer.getBounds().getNorthWest(),
         this._layer.getBounds().getSouthEast(),
       ]);
@@ -418,10 +462,12 @@ const DragMixin = {
       this._fireChange(this._layer.getBounds(), 'Edit');
     } else {
       // create the new coordinates array
-      const newCoords = moveCoords(this._layer.getLatLngs());
-
+      const newCoords = this._moveCoords(this._layer.getLatLngs(), deltaLatLng);
       // set new coordinates and redraw
       this._layer.setLatLngs(newCoords);
+      if (this._isBoundingBox) {
+        this._translateBoundingBoxListener(deltaLatLng)
+      }
       this._fireChange(this._layer.getLatLngs(), 'Edit');
     }
 
