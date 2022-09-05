@@ -110,6 +110,10 @@ const DragMixin = {
   disableLayerDrag() {
     this._layerDragEnabled = false;
     delete this._translationPoint
+    if (this._isBoundingBox) {
+      this._layer.remove()
+      delete this._isBoundingBox      
+    }
     if (this._rect) {
       this._boundingBoxHelperLayer.clearLayers()
       this._boundingBoxHelperLayer = undefined
