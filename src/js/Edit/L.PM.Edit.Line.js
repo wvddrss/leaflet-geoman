@@ -261,7 +261,7 @@ Edit.Line = Edit.extend({
   _createMarker(latlng, extraClass) {
     const marker = new L.Marker(latlng, {
       draggable: true,
-      icon: L.divIcon({ className: ['marker-icon', extraClass].join('') }),
+      icon: L.divIcon({ className: ['marker-icon', extraClass].join(' ') }),
     });
     this._setPane(marker, 'vertexPane');
 
