@@ -26,10 +26,10 @@ const Toolbar = L.Class.extend({
     oneBlock: false,
     position: 'topleft',
     positions: {
+      custom: '',
       draw: '',
       edit: '',
       options: '',
-      custom: '',
     },
   },
   customButtons: [],
@@ -51,6 +51,11 @@ const Toolbar = L.Class.extend({
 
     this.buttons = {};
     this.isVisible = false;
+    console.log('_createContainers')
+    this.customContainer = L.DomUtil.create(
+      'div',
+      'leaflet-pm-toolbar leaflet-pm-custom leaflet-bar leaflet-control'
+    );
     this.drawContainer = L.DomUtil.create(
       'div',
       'leaflet-pm-toolbar leaflet-pm-draw leaflet-bar leaflet-control'
@@ -62,10 +67,6 @@ const Toolbar = L.Class.extend({
     this.optionsContainer = L.DomUtil.create(
       'div',
       'leaflet-pm-toolbar leaflet-pm-options leaflet-bar leaflet-control'
-    );
-    this.customContainer = L.DomUtil.create(
-      'div',
-      'leaflet-pm-toolbar leaflet-pm-custom leaflet-bar leaflet-control'
     );
 
     this._defineButtons();
@@ -586,6 +587,7 @@ const Toolbar = L.Class.extend({
   },
 
   changeControlOrder(order = []) {
+    console.log('change order')
     const shapeMapping = this._shapeMapping();
 
     const _order = [];
@@ -604,6 +606,14 @@ const Toolbar = L.Class.extend({
     _order.forEach((control) => {
       if (buttons[control]) {
         newbtnorder[control] = buttons[control];
+      }
+    });
+    const customBtns = Object.keys(buttons).filter(
+      (btn) => buttons[btn]._button.tool === 'custom'
+    );
+    customBtns.forEach((btn) => {
+      if (_order.indexOf(btn) === -1) {
+        newbtnorder[btn] = buttons[btn];
       }
     });
 
@@ -627,14 +637,6 @@ const Toolbar = L.Class.extend({
       (btn) => buttons[btn]._button.tool === 'options'
     );
     optionsBtns.forEach((btn) => {
-      if (_order.indexOf(btn) === -1) {
-        newbtnorder[btn] = buttons[btn];
-      }
-    });
-    const customBtns = Object.keys(buttons).filter(
-      (btn) => buttons[btn]._button.tool === 'custom'
-    );
-    customBtns.forEach((btn) => {
       if (_order.indexOf(btn) === -1) {
         newbtnorder[btn] = buttons[btn];
       }

@@ -72,7 +72,12 @@ const ScaleMixin = {
     }
     forEachLatLng(this._rect.getLatLngs());
 
-    const oldLatLngs = copyLatLngs(this._scaledLayer);
+
+    let oldLatLngs = []
+
+    if (!(this._scaledLayer instanceof L.Marker)) {
+      oldLatLngs = copyLatLngs(this._scaledLayer);
+    }
     // scale the origin layer
     this._scaledLayer.setLatLngs(
       this._scaleLayer(

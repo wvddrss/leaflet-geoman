@@ -156,7 +156,7 @@ describe('Rotation', () => {
     cy.window().then(({ map }) => {
       const layer = map.pm.getGeomanDrawLayers()[0];
       layer.pm.enableRotate();
-      const marker1 = layer.pm._rotatePoly.pm._markers[0][0];
+      const marker1 = layer.pm._rotatePoly.pm._markers[0];
       marker1.fire('dragstart', { target: marker1 });
       marker1.setLatLng(map.containerPointToLatLng([200, 210]));
       marker1.fire('drag', { target: marker1 });
@@ -183,7 +183,7 @@ describe('Rotation', () => {
     cy.window().then(({ map }) => {
       const layer = map.pm.getGeomanDrawLayers()[0];
       layer.pm.enableRotate();
-      const marker1 = layer.pm._rotatePoly.pm._markers[0][0][0];
+      const marker1 = layer.pm._rotatePoly.pm._markers[0];
       marker1.fire('dragstart', { target: marker1 });
       marker1.setLatLng(map.containerPointToLatLng([200, 210]));
       marker1.fire('drag', { target: marker1 });

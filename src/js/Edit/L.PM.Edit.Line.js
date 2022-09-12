@@ -59,7 +59,7 @@ Edit.Line = Edit.extend({
     }
 
     if (options && typeof options.rotation === 'boolean') {
-      this.options.rotation = typeof options.rotation
+      this.options.rotation = options.rotation
     }
 
     // change state
@@ -179,9 +179,7 @@ Edit.Line = Edit.extend({
       }
     );
   },
-  _initMarkers({
-    boundingBox,
-  }) {
+  _initMarkers(options) {
     const map = this._map;
     const coords = this._layer.getLatLngs();
 
@@ -244,7 +242,8 @@ Edit.Line = Edit.extend({
     }
 
     // create markers
-    if (boundingBox) {
+    if (options &&
+      options.boundingBox) {
       this._markers = handleBoundingBox(coords);
     } else {
       this._markers = handleRing(coords)

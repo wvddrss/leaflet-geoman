@@ -249,7 +249,7 @@ export function prioritiseSort(key, _sortingOrder, order = 'asc') {
   };
 }
 
-export function copyLatLngs(layer, latlngs = layer.getLatLngs()) {
+export function copyLatLngs(layer, latlngs = layer instanceof L.Marker ? [] : layer.getLatLngs()) {
   if (layer instanceof L.Polygon) {
     return L.polygon(latlngs).getLatLngs();
   }

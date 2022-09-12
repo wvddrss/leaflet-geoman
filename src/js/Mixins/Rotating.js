@@ -1,4 +1,3 @@
-import get from 'lodash/get';
 import { _convertLatLngs, _toPoint } from '../helpers/ModeHelper';
 import { copyLatLngs } from '../helpers';
 
@@ -17,15 +16,21 @@ const RotateMixin = {
     this._rotationOriginPoint = _toPoint(this._map, this._rotationOriginLatLng);
     this._rotationStartPoint = _toPoint(this._map, e.target.getLatLng());
     // we need to store the initial latlngs so we can always re-calc from the origin latlngs
-    this._initialRotateLatLng = copyLatLngs(this._layer);
+    let originLatLngs = []
+    if (!(this._layer instanceof L.Marker)) {
+      this._initialRotateLatLng = copyLatLngs(this._layer);
+      originLatLngs = copyLatLngs(
+        this._rotationLayer,
+        this._rotationLayer.pm._rotateOrgLatLng
+      );
+    }
     this._initialScaleBoundingBoxLatLng = copyLatLngs(this._rect);
-    this._startAngle = this.getAngle();
+    if (!this._angle) {
+      this._startAngle = this._rect.options.rotationAngle ?? this.getAngle();
+    } else {
+      this._startAngle = this.getAngle();
+    }
     this._radiant = 0
-
-    const originLatLngs = copyLatLngs(
-      this._rotationLayer,
-      this._rotationLayer.pm._rotateOrgLatLng
-    );
 
     this._fireRotationStart(this._rotationLayer, originLatLngs);
     this._fireRotationStart(this._map, originLatLngs);
@@ -40,15 +45,17 @@ const RotateMixin = {
       Math.atan2(position.y - origin.y, position.x - origin.x) -
       Math.atan2(previous.y - origin.y, previous.x - origin.x);
     // rotate the temp polygon
-    this._layer.setLatLngs(
-      this._rotateLayer(
-        angleDiffRadiant,
-        this._initialRotateLatLng,
-        this._rotationOriginLatLng,
-        L.PM.Matrix.init(),
-        this._map
-      )
-    );
+    if (!(this._layer instanceof L.Marker)) {
+      this._layer.setLatLngs(
+        this._rotateLayer(
+          angleDiffRadiant,
+          this._initialRotateLatLng,
+          this._rotationOriginLatLng,
+          L.PM.Matrix.init(),
+          this._map
+        )
+      );
+    }
     this._rect.setLatLngs(
       this._rotateLayer(
         angleDiffRadiant,
@@ -74,33 +81,39 @@ const RotateMixin = {
       }
     }
     forEachLatLng(this._rect.getLatLngs());
-
-    const oldLatLngs = copyLatLngs(this._rotationLayer);
-    // rotate the origin layer
-    this._rotationLayer.setLatLngs(
-      this._rotateLayer(
-        angleDiffRadiant,
-        this._rotationLayer.pm._rotateOrgLatLng,
-        this._rotationOriginLatLng,
-        L.PM.Matrix.init(),
-        this._map
-      )
-    );
-
     this._radiant = angleDiffRadiant
     // convert the difference radiant to degrees and add it to the angle before rotation starts
     let angleDiff = (angleDiffRadiant * 180) / Math.PI;
     angleDiff = angleDiff < 0 ? angleDiff + 360 : angleDiff;
     const angle = angleDiff + this._startAngle;
     this._setAngle(angle);
-    this._rotationLayer.pm._setAngle(angle);
+
+    let oldLatLngs = []
+    if (this._rotationLayer instanceof L.RotatedMarker) {
+      // rotate the div icon
+      // const prevTransform = this._rotationLayer.options.icon.style.transform
+      this._rotationLayer.setRotationAngle(angle)
+		} else {
+      oldLatLngs = copyLatLngs(this._rotationLayer);
+      // rotate the origin layer
+      this._rotationLayer.setLatLngs(
+        this._rotateLayer(
+          angleDiffRadiant,
+          this._rotationLayer.pm._rotateOrgLatLng,
+          this._rotationOriginLatLng,
+          L.PM.Matrix.init(),
+          this._map
+        )
+      );
+      this._rotationLayer.pm._setAngle(angle);
+      this._rotationLayer.pm._fireChange(
+        this._rotationLayer.getLatLngs(),
+        'Rotation'
+      );
+    }
 
     this._fireRotation(this._rotationLayer, angleDiff, oldLatLngs);
     this._fireRotation(this._map, angleDiff, oldLatLngs);
-    this._rotationLayer.pm._fireChange(
-      this._rotationLayer.getLatLngs(),
-      'Rotation'
-    );
   },
   _onRotateEnd() {
     const startAngle = this._startAngle;
@@ -112,10 +125,14 @@ const RotateMixin = {
     delete this._initialRotateLatLng;
     delete this._startAngle;
 
-    const originLatLngs = copyLatLngs(
-      this._rotationLayer,
-      this._rotationLayer.pm._rotateOrgLatLng
-    );
+    const originLatLngs = []
+    
+    if (!(this.rotationLayer instanceof L.Marker)) {
+      copyLatLngs(
+        this._rotationLayer,
+        this._rotationLayer.pm._rotateOrgLatLng
+      );
+    }
     // store the new latlngs
     this._rotationLayer.pm._rotateOrgLatLng = copyLatLngs(this._rotationLayer);
 
@@ -147,6 +164,10 @@ const RotateMixin = {
     this._angle = angle % 360;
   },
   _getRotationCenter() {
+    if (this._layer instanceof L.Marker) {
+      const center = this._layer.getLatLng()
+      return center
+    }
     const polygon = L.polygon(this._layer.getLatLngs(), {
       stroke: false,
       fill: false,
@@ -176,11 +197,21 @@ const RotateMixin = {
       snapIgnore: true,
     };
 
-    // we create a temp polygon for rotation
-    this._rotatePoly = L.polygon(this._layer.getLatLngs(), options).addTo(
-      this._layer._map
-    );
-    this._rotatePoly.pm._setAngle(this.getAngle());
+    if (this._layer instanceof L.Marker) {
+      // we create a temp polygon for rotation
+      this._rotatePoly = L.rectangle(this._layer.pm._getBoundingBox(), options).addTo(
+        this._layer._map
+      );
+      if (this._layer.options && this._layer.options.rotationAngle) {
+        this._rotatePoly.pm._setAngle(this._layer.options.rotationAngle);
+      }
+    } else {
+      // we create a temp polygon for rotation
+      this._rotatePoly = L.polygon(this._layer.getLatLngs(), options).addTo(
+        this._layer._map
+      );
+      this._rotatePoly.pm._setAngle(this.getAngle());
+    }
     this._rotatePoly.pm.setOptions(this._layer._map.pm.getGlobalOptions());
     this._rotatePoly.pm.setOptions({
       rotate: true,
@@ -206,6 +237,9 @@ const RotateMixin = {
     this._fireRotationEnable(this._layer._map);
   },
   disableRotate() {
+    if (this._isBoundingBox) {
+      this._markerGroup.remove()
+    }
     if (this.rotateEnabled()) {
       if (this._rotatePoly.pm._layerRotated) {
         this._fireUpdate();
@@ -270,7 +304,7 @@ const RotateMixin = {
 
     this._startAngle = oldAngle;
     this._fireRotation(this._layer, angleDiff, oldLatLngs, this._layer);
-    this._fireRotation(this._map, angleDiff, oldLatLngs, this._layer);
+    this._fireRotation(this._layer._map, angleDiff, oldLatLngs, this._layer);
     delete this._startAngle;
     this._fireChange(this._layer.getLatLngs(), 'Rotation');
   },

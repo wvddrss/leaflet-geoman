@@ -374,15 +374,23 @@ const DragMixin = {
         L.DomUtil.removeClass(el, 'leaflet-pm-dragging');
       }
 
-      const polygon = L.polygon(this._layer.getLatLngs(), {
-        stroke: false,
-        fill: false,
-        pmIgnore: true,
-      }).addTo(this._layer._map);
-      const center = polygon.getCenter();
 
-      if (this._onDragEndBoundingBoxListener) {
-        this._onDragEndBoundingBoxListener(translation, center)
+      let center 
+      if (this._layer instanceof L.Polygon) {
+        const polygon = L.polygon(this._layer.getLatLngs(), {
+          stroke: false,
+          fill: false,
+          pmIgnore: true,
+        }).addTo(this._layer._map);
+        center = polygon.getCenter();
+  
+        if (this._onDragEndBoundingBoxListener) {
+          this._onDragEndBoundingBoxListener(translation, center)
+        }
+      } 
+
+      if (this._layer instanceof L.Marker) {
+        center = this._layer.getLatLng()
       }
 
       // fire pm:dragend event

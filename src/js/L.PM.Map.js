@@ -129,6 +129,7 @@ const Map = L.Class.extend({
 
     // apply the options (actually trigger the functionality)
     this.applyGlobalOptions();
+    
 
     // store options
     this.globalOptions = options;

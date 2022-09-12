@@ -1,4 +1,5 @@
 import Edit from './L.PM.Edit';
+import MarkerLimits from '../Mixins/MarkerLimits';
 
 Edit.Marker = Edit.extend({
   _shape: 'Marker',
@@ -9,6 +10,54 @@ Edit.Marker = Edit.extend({
 
     // register dragend event e.g. to fire pm:edit
     this._layer.on('dragend', this._onDragEnd, this);
+  },
+  includes: [MarkerLimits],
+  options: {
+    rotate: true,
+    // rectangle
+    boundsOptions: {
+      weight: 1,
+      opacity: 1,
+      dashArray: [3, 3],
+      noClip: true,
+    },
+  },
+  /**
+   * Bounding polygon
+   * @return {L.Polygon}
+   */
+  _getBoundingBox () {
+    const marginAroundIcon = 8
+    const widthIcon = this._layer.options.icon.options.iconSize[0]
+    const heightIcon = this._layer.options.icon.options.iconSize[1]
+    const pxsCoordinate = this._map.project(this._layer.feature.geometry.coordinates)
+    const boundingBoxPxs = [
+      //southWest
+      [
+        [pxsCoordinate.x - marginAroundIcon],
+        [pxsCoordinate.y + marginAroundIcon]
+      ],
+      //northEast
+      [
+        [pxsCoordinate.x + marginAroundIcon],
+        [pxsCoordinate.y - marginAroundIcon]
+      ],
+    ]
+
+    const newLatLngs = []
+
+    boundingBoxPxs.forEach(point => {
+      const newPointInLatLng = this._map.unproject(L.point(point))
+      newLatLngs.push([newPointInLatLng.lng, newPointInLatLng.lat])
+    })
+
+    return new L.Rectangle(
+      newLatLngs,
+      {
+        ...this.options.boundsOptions,
+        draggable: true
+      }
+    );
   },
   // TODO: remove default option in next major Release
   enable(options = { draggable: true }) {
@@ -33,6 +82,63 @@ Edit.Marker = Edit.extend({
     this._enabled = true;
 
     this._fireEnable();
+  },
+  enableRotate() {
+    this._map = this._layer._map;
+    this._initBoundingBox()
+    this._drawBoundingBox()
+  },
+  _initBoundingBox () {
+    // cleanup old ones first
+    if (this._markerGroup) {
+      console.log('clean up old markers')
+      this._markerGroup.clearLayers();
+    }
+
+    // add markerGroup to map, markerGroup includes regular and middle markers
+    console.log('add marker group')
+    this._markerGroup = new L.LayerGroup();
+    this._markerGroup._pmTempLayer = true;
+    this._rotationLayer = this._layer
+  },
+  _drawBoundingBox () {
+    this._rect = this._rect || this._getBoundingBox().addTo(this._markerGroup);
+    this._rect.pm._isBoundingBox = true
+    this._rect._map = this._map
+    this._rect.pm._markerGroup = this._markerGroup
+    this._layer._map.addLayer(this._markerGroup);
+    this._rect.pm.rotateLayer(this._layer.options.rotationAngle ?? 0);
+    this._rect.options['rotationAngle'] = this._layer.options.rotationAngle
+    this._createHandlers()
+  },
+  _createHandlers () {
+    this._markers = [];
+    // eslint-disable-next-line no-plusplus
+    for (let i = 0; i < 4; i++) {
+      // TODO: add stretching
+      this._markers.push(
+        this._createMarker(this._rect._latlngs[0][i])
+      );
+    }
+  },
+  _createMarker (latlng, extraClass) {
+    const marker = new L.Marker(latlng, {
+      draggable: true,
+      icon: L.divIcon({ className: ['marker-icon', extraClass].join('') }),
+    });
+    this._setPane(marker, 'vertexPane');
+
+    marker._pmTempLayer = true;
+
+    if (this.options.rotate) {
+      marker.on('dragstart', this._onRotateStart, this);
+      marker.on('drag', this._onRotate, this);
+      marker.on('dragend', this._onRotateEnd, this);
+    }
+
+    this._markerGroup.addLayer(marker);
+
+    return marker;
   },
   disable() {
     // if it's not enabled, it doesn't need to be disabled

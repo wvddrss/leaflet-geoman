@@ -459,7 +459,7 @@ const EventMixin = {
         angle: rotationLayer.pm.getAngle(),
         angleDiff,
         oldLatLngs,
-        newLatLngs: rotationLayer.getLatLngs(),
+        newLatLngs: rotationLayer instanceof L.Marker ? rotationLayer.getLatLng() : rotationLayer.getLatLngs(),
       },
       source,
       customPayload
@@ -482,7 +482,7 @@ const EventMixin = {
         startAngle,
         angle: this._rotationLayer.pm.getAngle(),
         originLatLngs,
-        newLatLngs: this._rotationLayer.getLatLngs(),
+        newLatLngs: this._rotationLayer instanceof L.Marker ? this._rotationLayer.getLatLng() : this._rotationLayer.getLatLngs(),
       },
       source,
       customPayload
