@@ -327,7 +327,7 @@ const Toolbar = L.Class.extend({
       disableOtherButtons: true,
       position: this.options.position,
       tool: 'edit',
-      actions: ['finishMode', 'cancel'],
+      actions: [],
     };
 
     const cutButton = {
@@ -363,7 +363,7 @@ const Toolbar = L.Class.extend({
       disableOtherButtons: true,
       position: this.options.position,
       tool: 'edit',
-      actions: ['finishMode', 'cancel'],
+      actions: [],
     };
 
     const rotateButton = {
@@ -378,7 +378,7 @@ const Toolbar = L.Class.extend({
       disableOtherButtons: true,
       position: this.options.position,
       tool: 'edit',
-      actions: ['finishMode', 'cancel'],
+      actions: [],
     };
 
     const scaleButton = {
@@ -393,7 +393,7 @@ const Toolbar = L.Class.extend({
       disableOtherButtons: true,
       position: this.options.position,
       tool: 'edit',
-      actions: ['finishMode', 'cancel'],
+      actions: [],
     };
 
     const drawTextButton = {

@@ -30,7 +30,11 @@ Edit.Marker = Edit.extend({
     const marginAroundIcon = 8
     const widthIcon = this._layer.options.icon.options.iconSize[0]
     const heightIcon = this._layer.options.icon.options.iconSize[1]
-    const pxsCoordinate = this._map.project(this._layer.feature.geometry.coordinates)
+    const {
+      lat,
+      lng
+    } = this._layer.getLatLng()
+    const pxsCoordinate = this._map.project([lng, lat])
     const boundingBoxPxs = [
       //southWest
       [
@@ -88,6 +92,44 @@ Edit.Marker = Edit.extend({
     this._initBoundingBox()
     this._drawBoundingBox()
   },
+  disableRotate() {
+    this._deleteDrawBoundingBox()
+  },
+  _deleteDrawBoundingBox() {
+    if (this.rotateEnabled()) {
+      if (this._rect) {
+        this._rect.remove()
+        this._rect = undefined
+        this._markerGroup = false
+      }
+      if (this._rotatePoly) {
+        this._rotatePoly.pm._layerRotated = false; // delete the temp polygon
+
+        this._rotatePoly.pm.disable();
+
+        this._rotatePoly.remove();
+
+        this._rotatePoly.pm.setOptions({
+          rotate: false
+        });
+
+        this._rotatePoly = undefined;
+        this._rotateOrgLatLng = undefined;
+
+        this._layer.off('remove', this.disableRotate, this);
+
+        this._rotateEnabled = false;
+
+        this._fireRotationDisable(this._layer); // we need to use this._layer._map because this._map can be undefined if layer was never enabled for editing before
+
+
+        this._fireRotationDisable(this._layer._map);
+      }
+      if (this._markerGroup) {
+        this._markerGroup.remove();
+      }
+    }
+  },
   _initBoundingBox () {
     // cleanup old ones first
     if (this._markerGroup) {
@@ -99,6 +141,7 @@ Edit.Marker = Edit.extend({
     console.log('add marker group')
     this._markerGroup = new L.LayerGroup();
     this._markerGroup._pmTempLayer = true;
+    this._rotateEnabled = true
     this._rotationLayer = this._layer
   },
   _drawBoundingBox () {
@@ -107,8 +150,10 @@ Edit.Marker = Edit.extend({
     this._rect._map = this._map
     this._rect.pm._markerGroup = this._markerGroup
     this._layer._map.addLayer(this._markerGroup);
-    this._rect.pm.rotateLayer(this._layer.options.rotationAngle ?? 0);
-    this._rect.options['rotationAngle'] = this._layer.options.rotationAngle
+    const formattedAngle = this._layer.options.rotationAngle > 360 ? this._layer.options.rotationAngle - 360 : this._layer.options.rotationAngle
+    console.log('rotating bounding box', formattedAngle)
+    this._rect.pm.rotateLayer(formattedAngle ?? 0);
+    this._rect.options['rotationAngle'] =formattedAngle
     this._createHandlers()
   },
   _createHandlers () {
@@ -141,6 +186,7 @@ Edit.Marker = Edit.extend({
     return marker;
   },
   disable() {
+    console.log('disable edit marker')
     // if it's not enabled, it doesn't need to be disabled
     if (!this.enabled()) {
       return;

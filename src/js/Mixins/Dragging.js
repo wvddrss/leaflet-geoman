@@ -114,9 +114,11 @@ const DragMixin = {
       this._layer.remove()
       delete this._isBoundingBox      
     }
-    if (this._rect) {
+    if (this._boundingBoxHelperLayer) {
       this._boundingBoxHelperLayer.clearLayers()
       this._boundingBoxHelperLayer = undefined
+    }
+    if (this._rect) {
       this._rect = undefined
     }
 

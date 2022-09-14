@@ -156,6 +156,7 @@ const RotateMixin = {
   },
   _rotateLayer(radiant, latlngs, origin, _matrix, map) {
     const originPoint = _toPoint(map, origin);
+    console.log('_rotateLayer', {radiant})
     this._matrix = _matrix.clone().rotate(radiant, originPoint).flip();
     return _convertLatLngs(latlngs, this._matrix, map);
   },
@@ -228,6 +229,7 @@ const RotateMixin = {
     // store the original latlngs
     this._rotateOrgLatLng = copyLatLngs(this._layer);
 
+    console.log('this._rotateEnabled = true')
     this._rotateEnabled = true;
 
     this._layer.on('remove', this.disableRotate, this);
@@ -280,7 +282,7 @@ const RotateMixin = {
     );
     // store the new latlngs
     this._rotateOrgLatLng = L.polygon(this._layer.getLatLngs()).getLatLngs();
-    this._setAngle(this.getAngle() + angle);
+    this._setAngle(angle);
     if (
       this.rotateEnabled() &&
       this._rotatePoly &&
