@@ -46,7 +46,7 @@ const DragMixin = {
           that._fireDragEnd('Edit', {
             transformation: {
               translation,
-              origin: [center.lng, center.lat]
+              origin: center
             }
           });
           that._layer.pm._fireEdit(this._layer, 'Dragging');
@@ -404,7 +404,7 @@ const DragMixin = {
       this._fireDragEnd('Edit', {
         transformation: {
           translation,
-          origin: [center.lng, center.lat]
+          origin: center
         }
       });
 

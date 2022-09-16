@@ -139,13 +139,13 @@ const RotateMixin = {
     this._fireRotationEnd(this._rotationLayer, startAngle, originLatLngs, undefined, {
       transformation: {
         "rotation": radiant,
-        "origin": [origin.lng, origin.lat],
+        "origin": origin,
       }
     });
     this._fireRotationEnd(this._map, startAngle, originLatLngs, undefined, {
       transformation: {
         "rotation": radiant,
-        "origin": [origin.lng, origin.lat],
+        "origin": origin,
       }
     });
     this._rotationLayer.pm._fireEdit(this._rotationLayer, 'Rotation');

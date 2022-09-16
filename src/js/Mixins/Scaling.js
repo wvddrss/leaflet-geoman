@@ -115,13 +115,13 @@ const ScaleMixin = {
 
     this._fireScaleEnd(this._scaledLayer, initialDistance, originLatLngs, undefined, {
       transformation: {
-        origin: [origin.lng, origin.lat],
+        origin,
         scale: ratio
       }
     });
     this._fireScaleEnd(this._map, initialDistance, originLatLngs, undefined, {
       transformation: {
-        origin: [origin.lng, origin.lat],
+        origin,
         scale: ratio
       }
     });
