@@ -137,6 +137,10 @@ const ScaleMixin = {
     return _convertLatLngs(latlngs, this._matrix, map);
   },
   _getScaleCenter() {
+    if (this._rect) {
+      console.log('this._rect.getCenter()')
+      return this._rect.getCenter()
+    }
     const polygon = L.polygon(this._layer.getLatLngs(), {
       stroke: false,
       fill: false,

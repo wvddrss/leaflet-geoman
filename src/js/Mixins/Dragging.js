@@ -49,6 +49,7 @@ const DragMixin = {
               origin: [center.lng, center.lat]
             }
           });
+          that._layer.pm._fireEdit(this._layer, 'Dragging');
         })
         this._rect.bringToFront()
       }
@@ -385,6 +386,10 @@ const DragMixin = {
           pmIgnore: true,
         }).addTo(this._layer._map);
         center = polygon.getCenter();
+
+        if (this._rect) {
+          center = this._rect._getCenter()
+        }
   
         if (this._onDragEndBoundingBoxListener) {
           this._onDragEndBoundingBoxListener(translation, center)

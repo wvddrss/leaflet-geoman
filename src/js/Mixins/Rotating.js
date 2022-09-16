@@ -169,6 +169,9 @@ const RotateMixin = {
       const center = this._layer.getLatLng()
       return center
     }
+    if (this._rect) {
+      return this._rect.getCenter()
+    }
     const polygon = L.polygon(this._layer.getLatLngs(), {
       stroke: false,
       fill: false,
