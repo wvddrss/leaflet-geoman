@@ -9,7 +9,10 @@ const DragMixin = {
 
     // before enabling layer drag, disable layer editing
     this.disable();
-    this._translationPoint = [0, 0]
+    this._translationPoint = {
+      lat: 0,
+      lng: 0
+    }
 
     this._layerDragEnabled = true;
 
@@ -445,7 +448,10 @@ const DragMixin = {
       lng: latlng.lng - this._tempDragCoord.lng,
     };
 
-    this._translationPoint = [this._translationPoint[0] + deltaLatLng.lng, this._translationPoint[1] + deltaLatLng.lat]
+    this._translationPoint = {
+      lat: this._translationPoint.lat + deltaLatLng.lat,
+      lng: this._translationPoint.lng + deltaLatLng.lng,
+    }
 
     if (
       this._layer instanceof L.Circle ||
