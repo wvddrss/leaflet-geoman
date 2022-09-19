@@ -26,8 +26,12 @@ const ScaleMixin = {
       this._scaledLayer.pm._scaleOrgLatLng
     );
 
-    this._fireScaleStart(this._scaledLayer, originLatLngs);
-    this._fireScaleStart(this._map, originLatLngs);
+    this._fireScaleStart(this._scaledLayer, originLatLngs, undefined, {
+      originStart: this._scaleOriginLatLng
+    });
+    this._fireScaleStart(this._map, originLatLngs, undefined, {
+      originStart: this._scaleOriginLatLng
+    });
   },
   _onScale(e) {
     const position = _toPoint(this._map, e.target.getLatLng());

@@ -32,8 +32,12 @@ const RotateMixin = {
     }
     this._radiant = 0
 
-    this._fireRotationStart(this._rotationLayer, originLatLngs);
-    this._fireRotationStart(this._map, originLatLngs);
+    this._fireRotationStart(this._rotationLayer, originLatLngs, 'Rotation', {
+      originStart: this._rotationOriginLatLng
+    });
+    this._fireRotationStart(this._map, originLatLngs, 'Rotation', {
+      originStart: this._rotationOriginLatLng
+    });
   },
   _onRotate(e) {
     const position = _toPoint(this._map, e.target.getLatLng());
@@ -156,7 +160,6 @@ const RotateMixin = {
   },
   _rotateLayer(radiant, latlngs, origin, _matrix, map) {
     const originPoint = _toPoint(map, origin);
-    console.log('_rotateLayer', {radiant})
     this._matrix = _matrix.clone().rotate(radiant, originPoint).flip();
     return _convertLatLngs(latlngs, this._matrix, map);
   },

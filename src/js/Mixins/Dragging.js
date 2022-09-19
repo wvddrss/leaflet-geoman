@@ -9,7 +9,7 @@ const DragMixin = {
 
     // before enabling layer drag, disable layer editing
     this.disable();
-    this._translationPoint = {
+    this._translationPoint = this._translationPoint ?? {
       lat: 0,
       lng: 0
     }
@@ -44,6 +44,11 @@ const DragMixin = {
         this._rect.pm.addTranslateBoundingBoxListener((deltaLatLng) => {
           const newCords = that._moveCoords(that._layer._latlngs, deltaLatLng)
           that._layer.setLatLngs(newCords);
+        })
+        this._rect.pm.addOnDragStartBoundingBoxListener((center) => {
+          that._fireDragStart('Edit', {
+            originStart: center
+          });
         })
         this._rect.pm.addOnDragEndBoundingBoxListener((translation, center) => {
           that._fireDragEnd('Edit', {
@@ -110,6 +115,9 @@ const DragMixin = {
   },
   addOnDragEndBoundingBoxListener(fn) {
     this._onDragEndBoundingBoxListener = fn
+  },
+  addOnDragStartBoundingBoxListener(fn) {
+    this._onDragStartBoundingBoxListener = fn
   },
   disableLayerDrag() {
     this._layerDragEnabled = false;
@@ -313,8 +321,18 @@ const DragMixin = {
         this._map.dragging.disable();
       }
 
-      // fire pm:dragstart event
-      this._fireDragStart();
+      
+      if (this._isBoundingBox) {
+        const center = this._layer.getCenter()
+        this._onDragStartBoundingBoxListener(center)
+        this._fireDragStart(undefined, {
+          originStart: center
+        });
+      } else {
+        // fire pm:dragstart event
+        this._fireDragStart();
+      }
+
     }
 
     // if _tempDragCoord is null add the current latlng to prevent throwing a error. This can happen when for example the layer is removed and added to the map while dragging (MarkerCluster)
@@ -397,6 +415,11 @@ const DragMixin = {
         if (this._onDragEndBoundingBoxListener) {
           this._onDragEndBoundingBoxListener(translation, center)
         }
+        console.log('transform', 'dragging', 'resetting _translationPoint', this._translationPoint)
+        this._translationPoint = {
+          lat: 0,
+          lng: 0,
+        }
       } 
 
       if (this._layer instanceof L.Marker) {
@@ -447,6 +470,8 @@ const DragMixin = {
       lat: latlng.lat - this._tempDragCoord.lat,
       lng: latlng.lng - this._tempDragCoord.lng,
     };
+
+    console.log('transform', '_onLayerDrag', 'this._translationPoint', this._translationPoint, ' + delta', deltaLatLng)
 
     this._translationPoint = {
       lat: this._translationPoint.lat + deltaLatLng.lat,
